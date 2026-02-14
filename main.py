@@ -1,8 +1,23 @@
 import asyncio
+import logging
 import sys
-import uvicorn
 from contextlib import asynccontextmanager
+
+import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+# Load environment variables FIRST
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Import database functions AFTER loading .env
 from shared_context.infrastructure.persistence.configuration.database_configuration import init_db, close_db
 
 # Fix for Windows + psycopg async mode
@@ -11,37 +26,44 @@ if sys.platform == 'win32':
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifecycle: startup and shutdown"""
+async def lifespan(_: FastAPI):
+    """
+    Application lifecycle: startup and shutdown
+    """
     # Startup
-    print("\n" + "=" * 60)
-    print("Starting Smart Band Edge Service")
-    print("=" * 60)
-    await init_db()
-    print("Connected to PostgreSQL (Supabase)")
-    print("Server ready to accept connections")
-    print("=" * 60 + "\n")
+    logger.info("=" * 60)
+    logger.info("Starting Smart Band Edge Service")
+    logger.info("=" * 60)
+
+    try:
+        await init_db()
+        logger.info("Connected to PostgreSQL (Supabase)")
+        logger.info("Server ready to accept connections")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        raise
+
+    logger.info("=" * 60)
 
     yield
 
     # Shutdown
-    print("\n" + "=" * 60)
-    print("Shutting down Smart Band Edge Service")
+    logger.info("\n" + "=" * 60)
+    logger.info("Shutting down Smart Band Edge Service")
     await close_db()
-    print("=" * 60 + "\n")
+    logger.info("=" * 60 + "\n")
 
 
-# Import after event loop policy is set
+# Import controller after event loop policy is set
 from core_context.interface.rest.controllers.heart_rate_controller import create_app
 
 # Create app with lifespan
 app = create_app(lifespan)
 
 if __name__ == "__main__":
-    print("""
+    logger.info("""
     ═══════════════════════════════════════════════════════════════════════
-    Smart Band Edge Service - Hexagonal Architecture with DDD and CQRS       
-    FastAPI Backend for ESP32 IoT Device                      
+    Smart Band Edge Service for ESP32 IoT Device                      
     ═══════════════════════════════════════════════════════════════════════
 
     Architecture Layers:
@@ -53,7 +75,7 @@ if __name__ == "__main__":
     Database:
     • PostgreSQL (Supabase)
     • SQLAlchemy 2.0 ORM
-    • Connection Pooling: 10-30 connections
+    • Connection Pooling: Optimized for Supabase
 
     Endpoints:
     • POST /api/v1/health-monitoring/data-records
@@ -61,8 +83,14 @@ if __name__ == "__main__":
     • GET  /api/v1/health-monitoring/data-records/{id}/statistics
     • GET  /health
 
-    Starting server on http://localhost:8000
+    Starting server on port: 8000
     Documentation: http://localhost:8000/docs
     """)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
+    )
