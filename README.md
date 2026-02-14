@@ -75,3 +75,8 @@ Edge API Platform para dispositivo IoT ESP32 Smart Band que compone un sistema d
 **Intervalo de medición:** 500ms  
 **Umbral LED (alerta):** < 60 bpm o > 140 bpm  
 **Cálculo de HR:** `(voltage / 3.3) * 675`
+
+## Proyecto Relacionado
+Este Edge API es utilizado por el ESP32:
+- Repositorio: https://github.com/OscarGAV/SmartBand-ESP32-System
+- Prototipo: https://wokwi.com/projects/446657341757965313
