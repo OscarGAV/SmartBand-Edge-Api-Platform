@@ -22,7 +22,7 @@ def create_app(lifespan=None) -> FastAPI:
     """
     app = FastAPI(
         title="Smart Band Edge Service",
-        description="IoT Edge Api Platform for ESP32 Smart Band - CQRS/DDD Architecture",
+        description="IoT Edge Api Platform for ESP32 Smart Band",
         version="1.0.0",
         lifespan=lifespan
     )

@@ -1,114 +1,67 @@
 # Smart Band Edge API Platform
 
-Edge API Platform para dispositivo IoT ESP32 Smart Band con el objetivo de conformar un sistema de monitoreo de la frecuencia cardiaca en tiempo real
+Edge API Platform para dispositivo IoT ESP32 Smart Band que compone un sistema de monitoreo para frecuencias cardíacas en tiempo real.
 
-## Arquitectura
+## User Stories
 
-- DDD (Domain-Driven Design)
-- CQRS (Command Query Responsibility Segregation)
-- Arquitectura Hexagonal
+### US-01: Registrar Lectura de Frecuencia Cardíaca
+**Como** usuario del dispositivo Smart Band  
+**Quiero** enviar lecturas de frecuencia cardíaca 
+**Para** que sean almacenadas y clasificadas automáticamente
 
-### Estructura del Proyecto
+**Criterios de aceptación:**
+- El sistema acepta `smartBandId` (int) y `pulse` (string)
+- Clasifica automáticamente según reglas de negocio:
+  - **CRITICAL**: < 40 bpm
+  - **LOW**: 40-59 bpm  
+  - **NORMAL**: 60-140 bpm
+  - **HIGH**: > 140 bpm
+- Retorna el registro creado con ID único, timestamp y status
+- Genera eventos de dominio: `HeartRateRecordedEvent` (siempre) y `AbnormalHeartRateDetectedEvent` (si status ≠ NORMAL)
 
-```
-SmatBand-Edge-Api-Platform/
-├── core_context/
-│   ├── domain/              # Entidades y lógica de dominio
-│   ├── application/         # Casos de uso (Commands/Queries)
-│   ├── infrastructure/      # Repositorios e implementaciones
-│   └── interface/           # Controllers y DTOs
-├── shared_context/
-│   └── infrastructure/      # Configuración de BD
-├── main.py                  # Punto de entrada
-└── requirements.txt         # Dependencias
-```
+**Endpoint:** `POST /api/v1/health-monitoring/data-records`
 
-## Tecnologías
-
-- FastAPI - Framework web asíncrono
-- SQLAlchemy 2.0 - ORM con soporte async
-- PostgreSQL - Base de datos (Supabase)
-- Psycopg - Driver PostgreSQL async
-- Pydantic - Validación de datos
-
-## Requisitos
-
-- Python 3.13
-- PostgreSQL (Supabase)
-
-## Instalación
-
-```bash
-# Clonar repositorio
-git clone https://github.com/tu-usuario/SmatBand-Edge-Api-Platform.git
-cd SmatBand-Edge-Api-Platform
-
-# Instalar dependencias
-pip install -r requirements.txt
-```
-
-## Ejecución Local
-
-```bash
-python main.py
-```
-
-La API estará disponible en:
-- API: http://localhost:8000
-- Documentación: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
-
-## Endpoints
-
-### Health Monitoring
-
-#### Registrar frecuencia cardíaca
-```http
-POST /api/v1/health-monitoring/data-records
-Content-Type: application/json
-
+**Ejemplo de request desde ESP32:**
+```json
 {
   "smartBandId": 1,
-  "pulse": 75
+  "pulse": "75"
 }
 ```
 
-#### Obtener historial
-```http
-GET /api/v1/health-monitoring/data-records/{smart_band_id}/history?limit=10
-```
+---
 
-#### Obtener estadísticas
-```http
-GET /api/v1/health-monitoring/data-records/{smart_band_id}/statistics
-```
+### US-02: Consultar Historial de Lecturas
+**Como** usuario del sistema  
+**Quiero** consultar el historial de lecturas de un dispositivo  
+**Para** visualizar el comportamiento de la frecuencia cardíaca en el tiempo
 
-## Deployment en Azure
+**Criterios de aceptación:**
+- Retorna lecturas ordenadas por timestamp descendente
+- Permite limitar la cantidad de resultados (default: 10)
+- Incluye ID, pulse, status y timestamp de cada lectura
 
-La api está desplegada en Azure App Service:
+**Endpoint:** `GET /api/v1/health-monitoring/data-records/{smart_band_id}/history?limit=10`
 
-```
-https://smart-band-edge-api-platform-grupo-uno.azurewebsites.net/docs
-```
+---
 
-## Base de Datos
+### US-03: Obtener Estadísticas de Frecuencia Cardíaca
+**Como** usuario del sistema  
+**Quiero** ver estadísticas agregadas de un dispositivo  
+**Para** analizar patrones y detectar anomalías
 
-### Tabla: heart_rate_readings
+**Criterios de aceptación:**
+- Retorna total de lecturas, promedio, mínimo y máximo
+- Incluye conteo de lecturas anormales (LOW, HIGH, CRITICAL)
+- Muestra distribución por status (NORMAL, LOW, HIGH, CRITICAL)
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | UUID | Identificador único |
-| smart_band_id | INT | ID del dispositivo |
-| pulse | INT | Frecuencia cardíaca |
-| status | VARCHAR | Estado (NORMAL, LOW, HIGH, CRITICAL) |
-| timestamp | TIMESTAMP | Fecha y hora del registro |
-| created_at | TIMESTAMP | Fecha de creación |
+**Endpoint:** `GET /api/v1/health-monitoring/data-records/{smart_band_id}/statistics`
 
-## Lógica de Negocio
+---
 
-El sistema clasifica la frecuencia cardíaca automáticamente:
+## Configuración ESP32
 
-- LOW: menor a 60 bpm
-- NORMAL: 60-100 bpm
-- HIGH: 101-120 bpm
-- CRITICAL: mayor a 120 bpm
+**Smart Band ID:** 1  
+**Intervalo de medición:** 500ms  
+**Umbral LED (alerta):** < 60 bpm o > 140 bpm  
+**Cálculo de HR:** `(voltage / 3.3) * 675`

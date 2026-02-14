@@ -62,7 +62,7 @@ class HeartRateReading:
             return HeartRateStatus.LOW
         elif pulse <= 140:
             return HeartRateStatus.NORMAL
-        elif pulse <= 180:
+        elif pulse > 140:
             return HeartRateStatus.HIGH
         else:
             return HeartRateStatus.CRITICAL
