@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
-from fastapi import Depends, HTTPException, FastAPI
+from sqlalchemy import text
+from fastapi import Depends, HTTPException, FastAPI, Request
 from core_context.application.internal.commandservices.record_heart_rate_command_handler import \
     RecordHeartRateCommandHandler
 from core_context.application.internal.queryservices.heart_rate_query_handler import HeartRateQueryHandler
@@ -20,19 +21,72 @@ def create_app(lifespan=None) -> FastAPI:
     Factory function to create FastAPI application.
     Allows injection of lifespan context for startup/shutdown events.
     """
-    app = FastAPI(
+    _ = FastAPI(
         title="Smart Band Edge Service",
         description="IoT Edge Api Platform for ESP32 Smart Band",
         version="1.0.0",
         lifespan=lifespan
     )
 
-    # Health Check
+    # Health Check (simple - sin BD)
     @app.get("/health", tags=["Health Monitoring"])
     async def health_check():
         return {
             "status": "healthy",
             "service": "smart-band-edge-service",
+            "timestamp": datetime.now(UTC).isoformat()
+        }
+
+    # Keep-Alive endpoint - MANTIENE SUPABASE ACTIVO
+    @app.api_route("/keepalive", methods=["GET", "HEAD"], tags=["Maintenance"], include_in_schema=False)
+    async def keepalive(request: Request):
+        """
+        Keep-alive endpoint para evitar que Supabase pause el proyecto.
+        Soporta tanto GET como HEAD (usado por UptimeRobot).
+
+        Este endpoint hace una query simple a la base de datos para mantenerla activa.
+        Configurar un monitor externo (UptimeRobot) para llamar este endpoint cada 5-10 minutos.
+        """
+        from shared_context.infrastructure.persistence.configuration.database_configuration import get_db_session
+
+        # Si es HEAD, solo devolver headers sin body
+        if request.method == "HEAD":
+            return {"status": "alive"}
+
+        # Si es GET, hacer query a la base de datos
+        try:
+            async for session in get_db_session():
+                # Ejecutar query simple para mantener la conexión activa
+                result = await session.execute(text("SELECT 1"))
+                db_status = result.scalar()
+
+                return {
+                    "status": "alive",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "database": "connected" if db_status == 1 else "disconnected",
+                    "message": "Keep-alive ping successful"
+                }
+        except Exception as e:
+            return {
+                "status": "error",
+                "timestamp": datetime.now(UTC).isoformat(),
+                "database": "error",
+                "message": str(e)
+            }
+
+    # Ping simple para verificar que la API responde
+    @app.api_route("/ping", methods=["GET", "HEAD"], tags=["Maintenance"], include_in_schema=False)
+    async def ping(request: Request):
+        """
+        Simple ping endpoint sin interacción con base de datos.
+        Útil para verificar que la API está respondiendo.
+        Soporta GET y HEAD.
+        """
+        if request.method == "HEAD":
+            return {"status": "pong"}
+
+        return {
+            "status": "pong",
             "timestamp": datetime.now(UTC).isoformat()
         }
 
