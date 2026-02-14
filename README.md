@@ -2,6 +2,16 @@
 
 Edge API Platform para dispositivo IoT ESP32 Smart Band que compone un sistema de monitoreo para frecuencias cardíacas en tiempo real.
 
+[![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/release/python-3130/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-green.svg)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue.svg)](https://www.postgresql.org/docs/17/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## Links
+
+- **Swagger UI**: [https://smart-band-edge-api-platform.azurewebsites.net/docs](https://smart-band-edge-api-platform.azurewebsites.net/docs)
+- **Status Page**: [https://stats.uptimerobot.com/MBVmW8Pm1L](https://stats.uptimerobot.com/MBVmW8Pm1L)
+
 ## User Stories
 
 ### US-01: Registrar Lectura de Frecuencia Cardíaca
