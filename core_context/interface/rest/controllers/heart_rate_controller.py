@@ -21,7 +21,7 @@ def create_app(lifespan=None) -> FastAPI:
     Factory function to create FastAPI application.
     Allows injection of lifespan context for startup/shutdown events.
     """
-    _ = FastAPI(
+    app = FastAPI(
         title="Smart Band Edge Service",
         description="IoT Edge Api Platform for ESP32 Smart Band",
         version="1.0.0",
